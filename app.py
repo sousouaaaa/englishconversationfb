@@ -1,26 +1,26 @@
 import openai
 import streamlit as st
 
-# OpenAI APIキーをsecretsから取得（Streamlit Cloud用）
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 st.set_page_config(page_title="英会話フィードバック", layout="centered")
-st.title("\U0001F4AC 英会話フィードバックアプリ")
+st.title("💬 英会話フィードバックアプリ")
+st.markdown("#### 録音した英会話音声をアップロードすると、文字起こしとAIによるフィードバックが得られます。")
 
-st.markdown("""
-#### 録音した英会話音声をアップロードすると、文字起こしとAIによるフィードバックが得られます。
-""")
-
-audio_file = st.file_uploader("\U0001F3A4 録音ファイルをアップロード（mp3, wav, m4a）", type=["mp3", "wav", "m4a"])
+audio_file = st.file_uploader("🎤 録音ファイルをアップロード（mp3, wav, m4a）", type=["mp3", "wav", "m4a"])
 
 if audio_file:
-    with st.spinner("\u6587\u5b57\u8d77\u3053\u3057\u4e2d..."):
-        transcript = openai.Audio.transcribe("whisper-1", audio_file)
+    with st.spinner("文字起こし中..."):
+        # 正しい書き方（現APIに対応）
+        transcript = openai.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_file
+        )
 
-    st.subheader("\u6587\u5b57\u8d77\u3053\u3057\u7d50\u679c")
-    st.write(transcript["text"])
+    st.subheader("📄 文字起こし結果")
+    st.write(transcript.text)
 
-    with st.spinner("\u30d5\u30a3\u30fc\u30c9\u30d0\u30c3\u30af\u751f\u6210\u4e2d..."):
+    with st.spinner("フィードバック生成中..."):
         prompt = f"""
 あなたは英会話の専門コーチです。
 以下の英会話文を読み、以下の観点でフィードバックしてください：
@@ -30,14 +30,14 @@ if audio_file:
 4. 学習アドバイス
 
 【会話文】
-{transcript["text"]}
+{transcript.text}
 """
-        response = openai.ChatCompletion.create(
+        response = openai.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "user", "content": prompt}
             ]
         )
 
-    st.subheader("\U0001F4DD フィードバック")
-    st.write(response["choices"][0]["message"]["content"])
+    st.subheader("📝 フィードバック")
+    st.write(response.choices[0].message.content)
